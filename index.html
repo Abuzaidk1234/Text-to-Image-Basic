@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromptCanvas | Free Text-to-Image Mini Project</title>
+  <meta
+    name="description"
+    content="A lightweight text-to-image generator mini project built with HTML, CSS, and JavaScript."
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Mini project | free hosting friendly</p>
+        <h1>PromptCanvas</h1>
+      </div>
+      <p class="topbar-note">Text prompt in. AI image out.</p>
+    </header>
+
+    <main class="hero-grid">
+      <section class="card intro-panel">
+        <p class="pill">No paid API key required</p>
+        <h2>Buildable in one sitting, impressive enough for a classroom demo.</h2>
+        <p class="lead">
+          This project uses a free public image generation endpoint, so you can host the frontend
+          for free and still show a working text-to-image generator to your teacher.
+        </p>
+
+        <div class="info-strip">
+          <div>
+            <span class="metric">Stack</span>
+            <strong>HTML / CSS / JS</strong>
+          </div>
+          <div>
+            <span class="metric">Hosting</span>
+            <strong>GitHub Pages / Netlify / Vercel</strong>
+          </div>
+          <div>
+            <span class="metric">Cost</span>
+            <strong>Free for demo use</strong>
+          </div>
+        </div>
+
+        <div class="prompt-bank">
+          <p>Try one of these prompts:</p>
+          <div class="chip-row">
+            <button class="chip" type="button" data-prompt="A cozy library inside a treehouse, warm lights, storybook illustration">
+              Treehouse library
+            </button>
+            <button class="chip" type="button" data-prompt="A futuristic train station in Mumbai during rainy evening, cinematic lighting">
+              Futuristic station
+            </button>
+            <button class="chip" type="button" data-prompt="A robot painting a classroom science poster, watercolor style, cheerful colors">
+              Robot artist
+            </button>
+            <button class="chip" type="button" data-prompt="A floating island market above the clouds, fantasy concept art">
+              Floating market
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card generator-panel">
+        <form id="generator-form" class="generator-form">
+          <label class="field">
+            <span class="field-label">Prompt</span>
+            <textarea
+              id="prompt"
+              name="prompt"
+              rows="5"
+              placeholder="Describe what you want to generate..."
+              required
+            >A student-friendly poster showing how AI turns text into images, clean modern design</textarea>
+          </label>
+
+          <div class="control-grid">
+            <label class="field">
+              <span class="field-label">Style</span>
+              <select id="style" name="style">
+                <option value="none">Natural</option>
+                <option value="cinematic">Cinematic</option>
+                <option value="anime">Anime</option>
+                <option value="pixel">Pixel art</option>
+                <option value="watercolor">Watercolor</option>
+                <option value="poster">Poster design</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Aspect ratio</span>
+              <select id="ratio" name="ratio">
+                <option value="square">Square</option>
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">Seed</span>
+              <input
+                id="seed"
+                name="seed"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Random"
+              >
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="generate-btn" class="primary-button" type="submit">Generate image</button>
+            <button id="surprise-btn" class="secondary-button" type="button">Surprise me</button>
+          </div>
+
+          <p class="helper-text">
+            Tip: leaving the seed empty creates a fresh random version each time. For the working
+            hosted demo, deploy this on Vercel so the built-in free proxy route can run.
+          </p>
+        </form>
+
+        <section class="preview-panel" aria-live="polite">
+          <div class="preview-header">
+            <div>
+              <p class="field-label">Result</p>
+              <p id="status-text" class="status-text">Ready to generate</p>
+            </div>
+            <button id="download-btn" class="text-button" type="button" disabled>Download</button>
+          </div>
+
+          <div id="preview-frame" class="preview-frame is-empty">
+            <div id="empty-state" class="empty-state">
+              <p class="empty-kicker">Your artwork will appear here</p>
+              <h3>Write a prompt, choose a style, and hit generate.</h3>
+            </div>
+            <img id="result-image" class="result-image" alt="Generated image preview" hidden>
+          </div>
+
+          <p id="result-meta" class="result-meta">No image generated yet.</p>
+        </section>
+      </section>
+    </main>
+
+    <section class="tips-grid">
+      <article class="card mini-card">
+        <p class="mini-heading">How it works</p>
+        <h3>Prompt + style + seed</h3>
+        <p>
+          The app combines your prompt with a style hint, sends it to a free image generation
+          service, then shows the generated artwork on the page.
+        </p>
+      </article>
+
+      <article class="card mini-card">
+        <p class="mini-heading">Why it is easy</p>
+        <h3>No backend needed</h3>
+        <p>
+          Because it is a static frontend, you can upload these files directly to a free hosting
+          platform without any server setup.
+        </p>
+      </article>
+
+      <article class="card mini-card">
+        <p class="mini-heading">What to tell your teacher</p>
+        <h3>It demonstrates prompt engineering</h3>
+        <p>
+          You can explain prompt design, style conditioning, reproducible seeds, UI state handling,
+          and free deployment in one small project.
+        </p>
+      </article>
+    </section>
+
+    <section class="card history-section">
+      <div class="section-heading">
+        <div>
+          <p class="mini-heading">Recent creations</p>
+          <h2>Reusable prompt history</h2>
+        </div>
+        <button id="clear-history-btn" class="text-button" type="button">Clear history</button>
+      </div>
+
+      <div id="history-grid" class="history-grid">
+        <div class="history-empty">
+          <p>Your latest generations will be saved here in this browser.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
