@@ -1,11 +1,11 @@
 # PromptCanvas
 
-PromptCanvas is a simple text-to-image generator mini project built with plain HTML, CSS, JavaScript, and one tiny free serverless function.
+PromptCanvas is a simple text-to-image generator mini project built with plain HTML, CSS, and JavaScript.
 
 It is designed to be:
 
 - easy to explain in a classroom
-- easy to host for free on Vercel
+- easy to host for free
 - free to try without a paid API key
 - small enough to understand quickly
 
@@ -24,40 +24,36 @@ It is designed to be:
 - `index.html`
 - `styles.css`
 - `script.js`
-- `api/generate.js`
 
-There is no traditional backend and no frontend build step.
+There is no backend and no build step.
 
 ## How it works
 
-The frontend calls `/api/generate`, and that free serverless function fetches the image from public Pollinations endpoints and returns it to the page.
+The frontend talks directly to AI Horde, a free community-powered image generation API.
 
 This makes the project very light, but it also means:
 
-- image generation still depends on the external free service being available
+- image generation depends on the external free service being available
 - response speed can vary
-- public endpoints may occasionally rate-limit or change behavior
+- free queue times can vary depending on worker availability
 
-If one route changes later, update the candidate URLs in `api/generate.js`.
+If the service changes later, update the API logic in `script.js`.
 
 ## Run locally
 
-For the working generator, deploy it on Vercel so the `/api/generate` route is available.
+You can:
 
-If you only open `index.html` directly, the UI loads but generation will not work because the serverless route is missing.
+1. Open `index.html` directly in a browser.
+2. Use VS Code Live Server.
+3. Host it on GitHub Pages, Netlify, or Vercel.
 
 ## Host for free
 
-Recommended free host:
+Recommended free hosts:
 
+- GitHub Pages
+- Netlify
 - Vercel
-
-Why Vercel:
-
-- it serves the frontend files for free
-- it also runs the tiny `api/generate.js` function for free
-- you do not need a paid API
-- deployment is simple from a GitHub repo
 
 ## Good explanation for your teacher
 
@@ -69,5 +65,4 @@ You can describe it like this:
 
 - `index.html`: structure of the app
 - `styles.css`: styling, layout, colors, animations, responsive design
-- `script.js`: prompt handling, image loading, download, local history
-- `api/generate.js`: free serverless proxy for image generation
+- `script.js`: prompt handling, AI Horde API calls, queue polling, image loading, download, local history

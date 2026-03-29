@@ -1,4 +1,5 @@
-const API_ENDPOINT = "/api/generate";
+const HORDE_BASE = "https://aihorde.net/api/v2";
+const HORDE_API_KEY = "0000000000";
 const HISTORY_KEY = "prompt-canvas-history";
 
 const stylePrompts = {
@@ -11,9 +12,9 @@ const stylePrompts = {
 };
 
 const ratioSizes = {
-  square: { width: 1024, height: 1024, label: "1:1" },
-  portrait: { width: 832, height: 1216, label: "portrait" },
-  landscape: { width: 1216, height: 832, label: "landscape" },
+  square: { width: 512, height: 512, label: "1:1" },
+  portrait: { width: 448, height: 640, label: "portrait" },
+  landscape: { width: 640, height: 448, label: "landscape" },
 };
 
 const surprisePrompts = [
@@ -91,21 +92,36 @@ function randomSeed() {
   return Math.floor(Math.random() * 1_000_000_000) + 1;
 }
 
-function buildImageUrl({ prompt, style, ratio, seed, cacheBust = true }) {
+function buildImageRequest({ prompt, style, ratio, seed }) {
   const fullPrompt = buildPrompt(prompt, style);
   const size = ratioSizes[ratio] || ratioSizes.square;
-  const url = new URL(API_ENDPOINT, window.location.origin);
+  const clientAgent = `PromptCanvas:1.0:${window.location.origin === "null" ? "local-file" : window.location.origin}`;
 
-  url.searchParams.set("prompt", prompt);
-  url.searchParams.set("style", style);
-  url.searchParams.set("ratio", ratio);
-  url.searchParams.set("seed", String(seed));
-
-  if (cacheBust) {
-    url.searchParams.set("v", String(Date.now()));
-  }
-
-  return { url: url.toString(), fullPrompt, size };
+  return {
+    fullPrompt,
+    size,
+    requestBody: {
+      prompt: fullPrompt,
+      params: {
+        n: 1,
+        width: size.width,
+        height: size.height,
+        steps: 20,
+        seed: String(seed),
+      },
+      nsfw: false,
+      censor_nsfw: true,
+      r2: true,
+      shared: false,
+      replacement_filter: true,
+      models: ["stable_diffusion"],
+    },
+    headers: {
+      "Content-Type": "application/json",
+      apikey: HORDE_API_KEY,
+      "Client-Agent": clientAgent,
+    },
+  };
 }
 
 function setLoadingState(isLoading) {
@@ -236,29 +252,96 @@ async function downloadCurrentImage() {
   }
 }
 
-async function readApiError(url) {
-  try {
-    const response = await fetch(url, { headers: { Accept: "application/json" } });
-    const data = await response.json().catch(() => null);
-
-    if (data?.error) {
-      return data.error;
-    }
-  } catch (error) {
-    return "The local API route is not available. Deploy this project on Vercel to use generation.";
-  }
-
-  return "The image could not be loaded.";
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function loadGeneratedImage(url) {
+async function requestGeneration(requestBody, headers) {
+  const response = await fetch(`${HORDE_BASE}/generate/async`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(requestBody),
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.message || data?.error || "AI Horde rejected the generation request.");
+  }
+
+  if (!data?.id) {
+    throw new Error("AI Horde did not return a generation ID.");
+  }
+
+  return data.id;
+}
+
+async function waitForGeneration(id, headers) {
+  const startedAt = Date.now();
+  const timeoutMs = 90000;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const response = await fetch(`${HORDE_BASE}/generate/check/${id}`, {
+      headers: {
+        apikey: headers.apikey,
+        "Client-Agent": headers["Client-Agent"],
+      },
+    });
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || "Could not read AI Horde queue status.");
+    }
+
+    if (data?.faulted) {
+      throw new Error("AI Horde faulted while generating the image. Please try again.");
+    }
+
+    if (data?.done) {
+      return;
+    }
+
+    const queueText =
+      typeof data?.queue_position === "number" && data.queue_position > 0
+        ? `Queue position ${data.queue_position}. `
+        : "";
+    const etaText =
+      typeof data?.wait_time === "number" && data.wait_time > 0
+        ? `Approx ${Math.ceil(data.wait_time)}s remaining.`
+        : "Waiting for a worker...";
+
+    setStatus(`Generating image... ${queueText}${etaText}`.trim());
+    await sleep(2500);
+  }
+
+  throw new Error("Generation took too long on the free queue. Please try again.");
+}
+
+async function fetchGenerationResult(id, headers) {
+  const response = await fetch(`${HORDE_BASE}/generate/status/${id}`, {
+    headers: {
+      apikey: headers.apikey,
+      "Client-Agent": headers["Client-Agent"],
+    },
+  });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.message || data?.error || "Could not fetch the final AI Horde result.");
+  }
+
+  const generation = data?.generations?.[0];
+  if (!generation?.img) {
+    throw new Error("AI Horde finished, but no image URL was returned.");
+  }
+
+  return generation;
+}
+
+function loadImageUrl(url) {
   return new Promise((resolve, reject) => {
     const loader = new Image();
     loader.onload = () => resolve(url);
-    loader.onerror = async () => {
-      const message = await readApiError(url);
-      reject(new Error(message));
-    };
+    loader.onerror = () => reject(new Error("The generated image URL could not be loaded."));
     loader.src = url;
   });
 }
@@ -279,20 +362,22 @@ async function generateImage(event) {
   const seed = seedInput.value.trim() ? Number(seedInput.value.trim()) : randomSeed();
   seedInput.value = String(seed);
 
-  const { url, fullPrompt, size } = buildImageUrl({ prompt, style, ratio, seed, cacheBust: true });
-  const historyUrl = buildImageUrl({ prompt, style, ratio, seed, cacheBust: false }).url;
+  const { fullPrompt, size, requestBody, headers } = buildImageRequest({ prompt, style, ratio, seed });
   const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
 
   setLoadingState(true);
-  setStatus("Generating image... this can take a few seconds.");
-  resultMeta.textContent = `Model: Flux | ${size.width}x${size.height} | seed ${seed}`;
+  setStatus("Sending request to the free AI Horde queue...");
+  resultMeta.textContent = `Model: stable_diffusion | ${size.width}x${size.height} | seed ${seed}`;
 
   try {
-    const resolvedUrl = await loadGeneratedImage(url);
+    const generationId = await requestGeneration(requestBody, headers);
+    await waitForGeneration(generationId, headers);
+    const generation = await fetchGenerationResult(generationId, headers);
+    const resolvedUrl = await loadImageUrl(generation.img);
 
     currentImageUrl = resolvedUrl;
     currentPrompt = prompt;
-    currentSeed = seed;
+    currentSeed = generation.seed || String(seed);
 
     showResult(resolvedUrl);
     downloadButton.disabled = false;
@@ -304,16 +389,16 @@ async function generateImage(event) {
       style,
       styleLabel,
       ratio,
-      seed,
-      url: historyUrl,
+      seed: generation.seed || String(seed),
+      url: resolvedUrl,
     });
 
-    resultMeta.textContent = `Prompt used: "${fullPrompt}" | ${size.label} | seed ${seed}`;
+    resultMeta.textContent = `Prompt used: "${fullPrompt}" | ${size.label} | seed ${currentSeed}`;
   } catch (error) {
     currentImageUrl = "";
     downloadButton.disabled = true;
     setStatus(error instanceof Error ? error.message : "Image generation failed.");
-    resultMeta.textContent = "This version expects a free Vercel deployment with the built-in /api/generate route.";
+    resultMeta.textContent = "This version uses AI Horde's free community queue, so wait times can vary.";
     showEmptyState();
   } finally {
     setLoadingState(false);
@@ -367,10 +452,5 @@ historyGrid.addEventListener("click", (event) => {
   setStatus("Previous prompt restored. Generate again to reproduce the image.");
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
-
-if (window.location.protocol === "file:") {
-  setStatus("The page UI works locally, but image generation needs the free Vercel deployment.");
-  resultMeta.textContent = "Open this project from a Vercel deployment so /api/generate is available.";
-}
 
 renderHistory();
