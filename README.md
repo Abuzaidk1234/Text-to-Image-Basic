@@ -2,6 +2,8 @@
 
 PromptCanvas is a lightweight text-to-image web application built with HTML, CSS, and JavaScript. It provides a clean browser-based interface for generating AI images from natural language prompts, with no paid API required.
 
+This is an independent frontend project built by Abuzaid Khan. Image generation is powered by AI Horde's public API and volunteer worker network.
+
 The project is designed to be simple to run, easy to host, and polished enough for portfolio, classroom, and demonstration use.
 
 ## Overview
@@ -64,6 +66,15 @@ Because it uses a free public queue:
 - generation speed may vary
 - queue times may increase during busy periods
 - results depend on external worker availability
+
+## Acknowledgement
+
+PromptCanvas uses AI Horde for image generation.
+
+AI Horde is a free, community-powered generation network supported by volunteer workers. This project uses their public API for the image generation backend, while PromptCanvas itself focuses on the frontend interface and user experience.
+
+- Official website: https://aihorde.net/
+- AI Horde repository: https://github.com/Haidra-Org/AI-Horde
 
 ## Project Structure
 
