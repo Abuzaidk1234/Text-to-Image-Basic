@@ -43,29 +43,41 @@ It is not ideal for:
 - HTML5
 - CSS3
 - Vanilla JavaScript
-- AI Horde public image generation API
+- Vercel serverless function for secure API proxying
+- AI Horde image generation API
 
-There is no frontend build step and no traditional backend.
+There is no frontend build step, but the deployed version now uses a lightweight backend route to keep the AI Horde key private.
 
 ## Key Features
 
 - Clean single-page interface
 - Day and night theme toggle
 - Prompt preset chips for quick testing
-- Free public AI image generation workflow
+- Secure AI Horde backend integration
 - Download support for generated images
+- Instant-loading showcase gallery for demos and portfolio visitors
 - Local recent-history section with action menu
 - Responsive layout for desktop and mobile
 
 ## How It Works
 
-The application sends image-generation requests to AI Horde's public API, polls the generation queue, and displays the returned image once the request is completed.
+The application sends image-generation requests to a small backend route in `/api/generate`. That route forwards the request to AI Horde using an API key stored in environment variables, polls through the frontend, and displays the returned image once the request is completed.
 
-Because it uses a free public queue:
+Because the image generation still depends on AI Horde's community worker network:
 
 - generation speed may vary
 - queue times may increase during busy periods
 - results depend on external worker availability
+
+## Recommended Demo Setup
+
+For the best classroom or portfolio demo experience:
+
+1. Deploy the project on Vercel.
+2. Add your AI Horde API key as the `HORDE_API_KEY` environment variable.
+3. Optionally add `HORDE_CLIENT_AGENT` with your app name.
+4. If you run your own AI Horde worker, keep it online during demo times for better priority.
+5. Replace the bundled showcase images in `demo-gallery/` with your own favorite generations before sharing the project publicly.
 
 ## Acknowledgement
 
@@ -80,6 +92,13 @@ AI Horde is a free, community-powered generation network supported by volunteer 
 
 ```text
 .
+|-- .env.example
+|-- api/
+|   `-- generate.js
+|-- demo-gallery/
+|   |-- flower-garden.svg
+|   |-- misty-castle.svg
+|   `-- moonlit-ship.svg
 |-- index.html
 |-- styles.css
 |-- script.js
@@ -87,6 +106,8 @@ AI Horde is a free, community-powered generation network supported by volunteer 
 ```
 
 - `index.html` contains the app structure and content
+- `api/generate.js` proxies AI Horde requests and keeps your API key off the frontend
+- `demo-gallery/` stores instant-loading showcase images for demos and visitors
 - `styles.css` handles layout, theming, responsiveness, and UI styling
 - `script.js` manages prompt handling, theme state, history, API requests, polling, and downloads
 
@@ -94,26 +115,26 @@ AI Horde is a free, community-powered generation network supported by volunteer 
 
 You can run the project in any of the following ways:
 
-1. Open `index.html` directly in your browser.
-2. Use VS Code Live Server.
-3. Host it as a static site on GitHub Pages, Netlify, or Vercel.
+1. Deploy it on Vercel with `HORDE_API_KEY` configured.
+2. Use `vercel dev` locally if you want the backend route during development.
+3. Open `index.html` directly only for UI preview. Live generation needs the `/api/generate` route.
 
 ## Deployment
 
 Since PromptCanvas is a static frontend project, deployment is straightforward:
 
-### GitHub Pages
-
-1. Push the project to a GitHub repository.
-2. Open repository settings.
-3. Enable GitHub Pages for the main branch.
-
-### Netlify or Vercel
+### Vercel
 
 1. Import the GitHub repository.
-2. Deploy as a static site.
+2. Add `HORDE_API_KEY` to your environment variables.
+3. Optionally add `HORDE_CLIENT_AGENT`.
+4. Deploy.
 
 No build command is required.
+
+### Other hosts
+
+The included `/api/generate` route is ready for Vercel. If you deploy elsewhere, you will need an equivalent backend function to keep the AI Horde key private.
 
 ## Limitations
 

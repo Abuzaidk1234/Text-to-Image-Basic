@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Misty castle showcase art</title>
+  <desc id="desc">A stylized fantasy landscape with a distant castle above misty hills.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#c8dfff"/>
+      <stop offset="55%" stop-color="#f3efe8"/>
+      <stop offset="100%" stop-color="#d6ead8"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#546a7b"/>
+      <stop offset="100%" stop-color="#2e3a43"/>
+    </linearGradient>
+    <linearGradient id="mist" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <circle cx="930" cy="170" r="88" fill="#fff8d8" opacity="0.9"/>
+  <path d="M0 520C120 470 210 470 320 520S520 610 650 560s220-40 550 40v340H0z" fill="#6f8c74"/>
+  <path d="M0 590C130 540 260 560 390 620s250 70 380 15 260-80 430 10v255H0z" fill="url(#hill)"/>
+  <path d="M0 430c130 30 210 35 335 0s245-40 370-10 245 45 495 0v110H0z" fill="url(#mist)" opacity="0.88"/>
+  <path d="M0 510c155 24 280 22 430-18s270-32 375-2 205 40 395 10v120H0z" fill="url(#mist)" opacity="0.75"/>
+  <g transform="translate(700 255)">
+    <rect x="82" y="92" width="170" height="195" rx="6" fill="#33404b"/>
+    <rect x="138" y="24" width="58" height="265" rx="6" fill="#2a3440"/>
+    <rect x="32" y="116" width="72" height="170" rx="6" fill="#3f4d58"/>
+    <rect x="230" y="122" width="68" height="164" rx="6" fill="#3f4d58"/>
+    <rect x="152" y="0" width="28" height="88" fill="#2a3440"/>
+    <rect x="44" y="82" width="20" height="38" fill="#3f4d58"/>
+    <rect x="250" y="88" width="20" height="34" fill="#3f4d58"/>
+    <g fill="#f7d8a2">
+      <rect x="104" y="130" width="22" height="28" rx="3"/>
+      <rect x="140" y="130" width="22" height="28" rx="3"/>
+      <rect x="176" y="130" width="22" height="28" rx="3"/>
+      <rect x="212" y="130" width="22" height="28" rx="3"/>
+      <rect x="104" y="176" width="22" height="28" rx="3"/>
+      <rect x="176" y="176" width="22" height="28" rx="3"/>
+    </g>
+  </g>
+  <path d="M0 720c120-32 250-20 390 0s300 26 435-12 250-52 375-10v202H0z" fill="#476153"/>
+</svg>

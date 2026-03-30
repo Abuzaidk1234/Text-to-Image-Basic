@@ -126,6 +126,7 @@ button {
 .topbar h1,
 .intro-panel h2,
 .mini-card h3,
+.showcase-section h2,
 .history-section h2,
 .empty-state h3 {
   margin: 0;
@@ -510,6 +511,60 @@ input:focus {
   line-height: 1.65;
 }
 
+.showcase-section {
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+
+.showcase-note {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.showcase-card {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-soft) 86%, white 14%);
+  border: 1px solid var(--line);
+}
+
+.showcase-image {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  object-fit: cover;
+}
+
+.showcase-content {
+  padding: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.showcase-content h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.showcase-content p:last-of-type {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.showcase-button {
+  justify-self: start;
+  text-decoration: none;
+}
+
 .history-section {
   margin-top: 1rem;
 }
@@ -646,12 +701,19 @@ input:focus {
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg-soft) 82%, white 18%);
   color: var(--text);
-  font-size: 1.4rem;
+  font-size: 0;
   line-height: 1;
   font-weight: 700;
   text-align: center;
   cursor: pointer;
   user-select: none;
+}
+
+.history-menu-trigger::before {
+  content: "...";
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  transform: translateY(-1px);
 }
 
 .history-menu-trigger:hover,
@@ -722,6 +784,7 @@ input:focus {
 @media (max-width: 1024px) {
   .hero-grid,
   .tips-grid,
+  .showcase-grid,
   .history-grid {
     grid-template-columns: 1fr;
   }
@@ -757,6 +820,7 @@ input:focus {
 
   .intro-panel,
   .generator-panel,
+  .showcase-section,
   .history-section,
   .mini-card {
     padding: 1.15rem;

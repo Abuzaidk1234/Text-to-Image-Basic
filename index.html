@@ -23,7 +23,7 @@
   <div class="page-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">A learning project</p>
+        <p class="eyebrow">Mini project</p>
         <h1>PromptCanvas</h1>
       </div>
       <div class="topbar-actions">
@@ -129,8 +129,8 @@
           </div>
 
           <p class="helper-text">
-            Tip: leaving the seed empty creates a fresh random version each time. This version uses
-            AI Horde's free public queue, so some prompts may take a little longer.
+            Tip: leaving the seed empty creates a fresh random version each time. This deployment
+            uses a secured AI Horde backend route, so your account key can stay private.
           </p>
           <p class="helper-text">
             Best results come from artistic prompts. It is not dependable for diagrams, poster
@@ -171,11 +171,11 @@
       </article>
 
       <article class="card mini-card">
-        <p class="mini-heading">Why it is easy</p>
-        <h3>No backend needed</h3>
+        <p class="mini-heading">Deployment setup</p>
+        <h3>Secured backend route</h3>
         <p>
-          Because it is a static frontend, you can upload these files directly to a free hosting
-          platform without any server setup.
+          The page sends generation requests through a small serverless route, which keeps the AI
+          Horde API key off the public frontend.
         </p>
       </article>
 
@@ -187,6 +187,87 @@
           images rather than clean graphic design or text-heavy compositions.
         </p>
       </article>
+    </section>
+
+    <section class="card showcase-section">
+      <div class="section-heading">
+        <div>
+          <p class="mini-heading">Demo Showcase</p>
+          <h2>Instant preview gallery</h2>
+        </div>
+      </div>
+      <p class="showcase-note">
+        These featured visuals load instantly, so teachers and visitors can still get a good first
+        impression even if the live AI Horde queue is busy.
+      </p>
+
+      <div class="showcase-grid">
+        <article class="showcase-card">
+          <img
+            class="showcase-image"
+            src="demo-gallery/misty-castle.svg"
+            alt="Prompt-inspired showcase art of a misty castle landscape"
+          >
+          <div class="showcase-content">
+            <p class="mini-heading">Featured Prompt</p>
+            <h3>Misty castle</h3>
+            <p>A grand castle with a misty environment, fantasy atmosphere, soft cinematic lighting.</p>
+            <button
+              class="text-button showcase-button"
+              type="button"
+              data-prompt="A grand castle with a misty environment, fantasy atmosphere, soft cinematic lighting"
+              data-style="none"
+              data-ratio="landscape"
+            >
+              Use this prompt
+            </button>
+          </div>
+        </article>
+
+        <article class="showcase-card">
+          <img
+            class="showcase-image"
+            src="demo-gallery/moonlit-ship.svg"
+            alt="Prompt-inspired showcase art of a moonlit ship on the ocean"
+          >
+          <div class="showcase-content">
+            <p class="mini-heading">Featured Prompt</p>
+            <h3>Moonlit ship</h3>
+            <p>A mechanical ship on a misty ocean at night, dim glowing lights, softly lit moonlight.</p>
+            <button
+              class="text-button showcase-button"
+              type="button"
+              data-prompt="A mechanical ship on a misty ocean at night, dim glowing lights on the ship, the ocean softly lit by moonlight, cinematic scene"
+              data-style="none"
+              data-ratio="landscape"
+            >
+              Use this prompt
+            </button>
+          </div>
+        </article>
+
+        <article class="showcase-card">
+          <img
+            class="showcase-image"
+            src="demo-gallery/flower-garden.svg"
+            alt="Prompt-inspired showcase art of a glowing flower garden"
+          >
+          <div class="showcase-content">
+            <p class="mini-heading">Featured Prompt</p>
+            <h3>Flower garden</h3>
+            <p>A garden full of ethereal flowers, dreamy summer atmosphere, soft sunlight, magical colors.</p>
+            <button
+              class="text-button showcase-button"
+              type="button"
+              data-prompt="A garden full of ethereal flowers, dreamy summer atmosphere, soft sunlight, magical colors"
+              data-style="watercolor"
+              data-ratio="landscape"
+            >
+              Use this prompt
+            </button>
+          </div>
+        </article>
+      </div>
     </section>
 
     <section class="card history-section">
@@ -225,7 +306,7 @@
       <p class="mini-heading">Project Credits</p>
       <p class="credit-line">
         <span>Abuzaid Khan</span>
-        <span>Bachelors of Engineering in Artificial intelligence and Machine Learning</span>
+        <span>Bachelors of Engineering in Artificial and Machine Learning</span>
       </p>
       <div class="social-links">
         <a

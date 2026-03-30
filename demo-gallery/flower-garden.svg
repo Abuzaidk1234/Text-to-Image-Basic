@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Flower garden showcase art</title>
+  <desc id="desc">A stylized magical flower garden in soft summer light.</desc>
+  <defs>
+    <linearGradient id="gardenSky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f9d6e8"/>
+      <stop offset="52%" stop-color="#fff4d7"/>
+      <stop offset="100%" stop-color="#d8f1e1"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8fd1a1"/>
+      <stop offset="100%" stop-color="#447255"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#gardenSky)"/>
+  <circle cx="215" cy="170" r="90" fill="#fff8d0" opacity="0.86"/>
+  <path d="M0 545c170-32 310-32 490 10s306 40 430 6 190-42 280-24v363H0z" fill="url(#ground)"/>
+  <path d="M0 455c130 28 230 42 382 14s278-42 438-8 250 34 380 14v90H0z" fill="#ffffff" opacity="0.24"/>
+  <g opacity="0.92">
+    <path d="M110 900V650" stroke="#3c6c4c" stroke-width="18" stroke-linecap="round"/>
+    <path d="M260 900V610" stroke="#417651" stroke-width="18" stroke-linecap="round"/>
+    <path d="M430 900V670" stroke="#3c6c4c" stroke-width="18" stroke-linecap="round"/>
+    <path d="M620 900V620" stroke="#417651" stroke-width="18" stroke-linecap="round"/>
+    <path d="M810 900V665" stroke="#3c6c4c" stroke-width="18" stroke-linecap="round"/>
+    <path d="M1010 900V635" stroke="#417651" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <g>
+    <g transform="translate(110 640)">
+      <circle r="58" fill="#ff9ac6"/>
+      <circle cx="-48" cy="12" r="40" fill="#ffd1e6"/>
+      <circle cx="48" cy="12" r="40" fill="#ffd1e6"/>
+      <circle cy="-50" r="38" fill="#ffc4de"/>
+      <circle cy="24" r="18" fill="#fff0a7"/>
+    </g>
+    <g transform="translate(260 602)">
+      <circle r="64" fill="#9f8cff"/>
+      <circle cx="-52" cy="10" r="42" fill="#c4bbff"/>
+      <circle cx="52" cy="10" r="42" fill="#c4bbff"/>
+      <circle cy="-56" r="40" fill="#b4a7ff"/>
+      <circle cy="28" r="18" fill="#fff0a7"/>
+    </g>
+    <g transform="translate(430 662)">
+      <circle r="56" fill="#ffa566"/>
+      <circle cx="-46" cy="10" r="38" fill="#ffd0af"/>
+      <circle cx="46" cy="10" r="38" fill="#ffd0af"/>
+      <circle cy="-46" r="34" fill="#ffc18f"/>
+      <circle cy="24" r="16" fill="#fff0a7"/>
+    </g>
+    <g transform="translate(620 612)">
+      <circle r="60" fill="#68c6ff"/>
+      <circle cx="-50" cy="10" r="40" fill="#b8e5ff"/>
+      <circle cx="50" cy="10" r="40" fill="#b8e5ff"/>
+      <circle cy="-50" r="36" fill="#9edaff"/>
+      <circle cy="24" r="18" fill="#fff0a7"/>
+    </g>
+    <g transform="translate(810 654)">
+      <circle r="54" fill="#ff7fa8"/>
+      <circle cx="-44" cy="8" r="36" fill="#ffd0dd"/>
+      <circle cx="44" cy="8" r="36" fill="#ffd0dd"/>
+      <circle cy="-44" r="34" fill="#ffb7cc"/>
+      <circle cy="22" r="16" fill="#fff0a7"/>
+    </g>
+    <g transform="translate(1010 626)">
+      <circle r="62" fill="#8dd78d"/>
+      <circle cx="-52" cy="10" r="40" fill="#cef1ce"/>
+      <circle cx="52" cy="10" r="40" fill="#cef1ce"/>
+      <circle cy="-52" r="38" fill="#b3e8b3"/>
+      <circle cy="24" r="18" fill="#fff0a7"/>
+    </g>
+  </g>
+</svg>

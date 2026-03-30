@@ -1,5 +1,4 @@
-const HORDE_BASE = "https://aihorde.net/api/v2";
-const HORDE_API_KEY = "0000000000";
+const API_ROUTE = "/api/generate";
 const HISTORY_KEY = "prompt-canvas-history";
 const THEME_KEY = "prompt-canvas-theme";
 const MODEL_CACHE_MS = 60000;
@@ -28,15 +27,6 @@ const preferredModelsByStyle = {
     "Anything v5",
     "stable_diffusion",
   ],
-  cinematic: [
-    "Realistic Vision",
-    "Photon",
-    "Dreamshaper",
-    "NeverEnding Dream",
-    "AbsoluteReality",
-    "Deliberate",
-    "stable_diffusion",
-  ],
   anime: [
     "Anything v5",
     "Anything Diffusion",
@@ -44,11 +34,6 @@ const preferredModelsByStyle = {
     "Anime Illust Diffusion XL",
     "Eimis Anime Diffusion",
     "Dreamshaper",
-    "stable_diffusion",
-  ],
-  pixel: [
-    "AIO Pixel Art",
-    "App Icon Diffusion",
     "stable_diffusion",
   ],
   watercolor: [
@@ -59,23 +44,12 @@ const preferredModelsByStyle = {
     "Perfect World",
     "stable_diffusion",
   ],
-  poster: [
-    "App Icon Diffusion",
-    "ModernArt Diffusion",
-    "Photon",
-    "Dreamshaper",
-    "Anything v5",
-    "stable_diffusion",
-  ],
 };
 
 const stylePrompts = {
   none: "",
-  cinematic: "cinematic lighting, dramatic composition, rich detail",
   anime: "anime illustration, expressive lines, vibrant colors",
-  pixel: "pixel art, 8-bit inspired, crisp retro game aesthetic",
   watercolor: "watercolor painting, soft edges, textured brush strokes",
-  poster: "graphic poster design, clean layout, bold shapes, modern visual hierarchy",
 };
 
 const ratioSizes = {
@@ -86,8 +60,8 @@ const ratioSizes = {
 
 const surprisePrompts = [
   {
-    prompt: "A solar-powered classroom on Mars, educational infographic style",
-    style: "poster",
+    prompt: "A sunrise over floating temples above soft clouds, atmospheric fantasy landscape",
+    style: "none",
     ratio: "portrait",
   },
   {
@@ -96,13 +70,13 @@ const surprisePrompts = [
     ratio: "square",
   },
   {
-    prompt: "A neon bicycle racing through a digital city, motion blur, rainy night",
-    style: "cinematic",
+    prompt: "A glowing koi pond under lantern light, serene anime background art",
+    style: "anime",
     ratio: "landscape",
   },
   {
-    prompt: "An eco-friendly smart village in 2050, bright and optimistic",
-    style: "anime",
+    prompt: "A peaceful mountain village in spring, watercolor travel-journal feeling",
+    style: "watercolor",
     ratio: "landscape",
   },
 ];
@@ -122,7 +96,7 @@ const emptyState = document.querySelector("#empty-state");
 const resultImage = document.querySelector("#result-image");
 const historyGrid = document.querySelector("#history-grid");
 const clearHistoryButton = document.querySelector("#clear-history-btn");
-const chips = document.querySelectorAll(".chip");
+const promptInsertButtons = document.querySelectorAll("[data-prompt]");
 const themeToggleButton = document.querySelector("#theme-toggle");
 
 let currentImageUrl = "";
@@ -135,6 +109,10 @@ resultImage.addEventListener("error", () => {
   showEmptyState();
   setStatus("Image preview could not be loaded.");
 });
+
+function isLocalFileMode() {
+  return window.location.protocol === "file:";
+}
 
 function applyTheme(theme) {
   const nextTheme = theme === "dark" ? "dark" : "light";
@@ -212,16 +190,28 @@ function normalizeEta(value) {
   return typeof value === "number" && value >= 0 ? value : Number.POSITIVE_INFINITY;
 }
 
+function buildApiUrl(action, id = "") {
+  const baseOrigin = isLocalFileMode() ? "http://localhost" : window.location.origin;
+  const url = new URL(API_ROUTE, baseOrigin);
+  url.searchParams.set("action", action);
+
+  if (id) {
+    url.searchParams.set("id", id);
+  }
+
+  return url.toString();
+}
+
 async function getLiveModels() {
   if (modelStatusCache && Date.now() - modelStatusFetchedAt < MODEL_CACHE_MS) {
     return modelStatusCache;
   }
 
-  const response = await fetch(`${HORDE_BASE}/status/models?type=image`);
+  const response = await fetch(buildApiUrl("models"));
   const data = await response.json().catch(() => null);
 
   if (!response.ok || !Array.isArray(data)) {
-    throw new Error("Could not fetch the live free-model queue.");
+    throw new Error("Could not fetch the live AI Horde model queue.");
   }
 
   modelStatusCache = data;
@@ -286,7 +276,6 @@ async function chooseBestModel(style) {
 function buildImageRequest({ prompt, style, ratio, seed, modelName }) {
   const fullPrompt = buildPrompt(prompt, style);
   const size = ratioSizes[ratio] || ratioSizes.square;
-  const clientAgent = `PromptCanvas:1.0:${window.location.origin === "null" ? "local-file" : window.location.origin}`;
 
   return {
     fullPrompt,
@@ -306,11 +295,6 @@ function buildImageRequest({ prompt, style, ratio, seed, modelName }) {
       shared: false,
       replacement_filter: true,
       models: [modelName],
-    },
-    headers: {
-      "Content-Type": "application/json",
-      apikey: HORDE_API_KEY,
-      "Client-Agent": clientAgent,
     },
   };
 }
@@ -514,10 +498,12 @@ function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function requestGeneration(requestBody, headers) {
-  const response = await fetch(`${HORDE_BASE}/generate/async`, {
+async function requestGeneration(requestBody) {
+  const response = await fetch(API_ROUTE, {
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(requestBody),
   });
 
@@ -533,17 +519,12 @@ async function requestGeneration(requestBody, headers) {
   return data.id;
 }
 
-async function waitForGeneration(id, headers) {
+async function waitForGeneration(id) {
   const startedAt = Date.now();
   const timeoutMs = 180000;
 
   while (Date.now() - startedAt < timeoutMs) {
-    const response = await fetch(`${HORDE_BASE}/generate/check/${id}`, {
-      headers: {
-        apikey: headers.apikey,
-        "Client-Agent": headers["Client-Agent"],
-      },
-    });
+    const response = await fetch(buildApiUrl("check", id));
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
@@ -571,16 +552,11 @@ async function waitForGeneration(id, headers) {
     await sleep(2500);
   }
 
-  throw new Error("Generation took too long on the free queue. Please try again.");
+  throw new Error("Generation took too long on the queue. Please try again.");
 }
 
-async function fetchGenerationResult(id, headers) {
-  const response = await fetch(`${HORDE_BASE}/generate/status/${id}`, {
-    headers: {
-      apikey: headers.apikey,
-      "Client-Agent": headers["Client-Agent"],
-    },
-  });
+async function fetchGenerationResult(id) {
+  const response = await fetch(buildApiUrl("status", id));
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -603,9 +579,48 @@ function loadImageUrl(url) {
     loader.src = url;
   });
 }
+async function generateWithAiHorde({ prompt, style, ratio, seed }) {
+  const selectedModel = await chooseBestModel(style);
+
+  if (typeof selectedModel.eta === "number" && selectedModel.eta > 180) {
+    throw new Error("The AI Horde queue is overloaded right now. Please try again in a minute.");
+  }
+
+  const { fullPrompt, size, requestBody } = buildImageRequest({
+    prompt,
+    style,
+    ratio,
+    seed,
+    modelName: selectedModel.name,
+  });
+
+  setStatus(`Using ${selectedModel.name}. Sending request through the secured backend...`);
+  resultMeta.textContent = `Model: ${selectedModel.name} | ${size.width}x${size.height} | seed ${seed}`;
+
+  const generationId = await requestGeneration(requestBody);
+  await waitForGeneration(generationId);
+  const generation = await fetchGenerationResult(generationId);
+  const resolvedUrl = await loadImageUrl(generation.img);
+  const usedSeed = generation.seed || String(seed);
+
+  return {
+    modelName: selectedModel.name,
+    promptUsed: fullPrompt,
+    resolvedUrl,
+    resultMeta: `Prompt used: "${fullPrompt}" | ${size.label} | seed ${usedSeed}`,
+    usedSeed,
+  };
+}
 
 async function generateImage(event) {
   event.preventDefault();
+
+  if (isLocalFileMode()) {
+    setStatus("Live generation now runs through /api/generate. Open the deployed site or run a serverless dev setup.");
+    resultMeta.textContent = "This secured version needs a backend route, so opening index.html directly will not generate images.";
+    showEmptyState();
+    return;
+  }
 
   const prompt = promptInput.value.trim();
   const style = styleSelect.value;
@@ -621,36 +636,17 @@ async function generateImage(event) {
   seedInput.value = String(seed);
 
   setLoadingState(true);
-  setStatus("Checking the fastest free model right now...");
+  setStatus("Checking the fastest available AI Horde model...");
 
   try {
-    const selectedModel = await chooseBestModel(style);
-
-    if (typeof selectedModel.eta === "number" && selectedModel.eta > 180) {
-      throw new Error("The free queue is overloaded right now. Please try again in a minute.");
-    }
-
-    const { fullPrompt, size, requestBody, headers } = buildImageRequest({
-      prompt,
-      style,
-      ratio,
-      seed,
-      modelName: selectedModel.name,
-    });
     const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
-    setStatus(`Using ${selectedModel.name}. Sending request to the free queue...`);
-    resultMeta.textContent = `Model: ${selectedModel.name} | ${size.width}x${size.height} | seed ${seed}`;
+    const generation = await generateWithAiHorde({ prompt, style, ratio, seed });
 
-    const generationId = await requestGeneration(requestBody, headers);
-    await waitForGeneration(generationId, headers);
-    const generation = await fetchGenerationResult(generationId, headers);
-    const resolvedUrl = await loadImageUrl(generation.img);
-
-    currentImageUrl = resolvedUrl;
+    currentImageUrl = generation.resolvedUrl;
     currentPrompt = prompt;
-    currentSeed = generation.seed || String(seed);
+    currentSeed = generation.usedSeed;
 
-    showResult(resolvedUrl);
+    showResult(generation.resolvedUrl);
     downloadButton.disabled = false;
     setStatus("Image generated successfully.");
 
@@ -660,16 +656,17 @@ async function generateImage(event) {
       style,
       styleLabel,
       ratio,
-      seed: generation.seed || String(seed),
-      url: resolvedUrl,
+      seed: generation.usedSeed,
+      url: generation.resolvedUrl,
     });
 
-    resultMeta.textContent = `Prompt used: "${fullPrompt}" | ${size.label} | seed ${currentSeed}`;
+    resultMeta.textContent = generation.resultMeta;
   } catch (error) {
     currentImageUrl = "";
     downloadButton.disabled = true;
     setStatus(error instanceof Error ? error.message : "Image generation failed.");
-    resultMeta.textContent = "This version uses AI Horde's free community queue, so wait times can vary.";
+    resultMeta.textContent =
+      "This version uses a protected AI Horde backend, but queue times can still vary when the community network is busy.";
     showEmptyState();
   } finally {
     setLoadingState(false);
@@ -685,9 +682,18 @@ surpriseButton.addEventListener("click", () => {
   setStatus("Preset loaded. Generate it or edit the text first.");
 });
 
-chips.forEach((chip) => {
-  chip.addEventListener("click", () => {
-    promptInput.value = chip.dataset.prompt || "";
+promptInsertButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    promptInput.value = button.dataset.prompt || "";
+
+    if (button.dataset.style) {
+      styleSelect.value = button.dataset.style;
+    }
+
+    if (button.dataset.ratio) {
+      ratioSelect.value = button.dataset.ratio;
+    }
+
     promptInput.focus();
     setStatus("Prompt inserted. You can generate it now.");
   });
