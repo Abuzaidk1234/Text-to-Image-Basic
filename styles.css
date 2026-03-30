@@ -60,6 +60,10 @@ img {
   display: block;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 button,
 input,
 select,
@@ -416,6 +420,14 @@ input:focus {
   place-items: center;
 }
 
+.preview-frame.is-empty:not(.is-loading) {
+  display: none;
+}
+
+.preview-frame.is-empty:not(.is-loading) + .result-meta {
+  display: none;
+}
+
 .preview-frame::after {
   content: "";
   position: absolute;
@@ -444,6 +456,10 @@ input:focus {
   max-width: 24rem;
   text-align: center;
   padding: 1.25rem;
+}
+
+.preview-frame.is-loading .empty-state {
+  opacity: 0;
 }
 
 .empty-kicker {

@@ -131,6 +131,11 @@ let currentSeed = "";
 let modelStatusCache = null;
 let modelStatusFetchedAt = 0;
 
+resultImage.addEventListener("error", () => {
+  showEmptyState();
+  setStatus("Image preview could not be loaded.");
+});
+
 function applyTheme(theme) {
   const nextTheme = theme === "dark" ? "dark" : "light";
   document.body.dataset.theme = nextTheme;
