@@ -514,6 +514,27 @@ input:focus {
   margin-top: 1rem;
 }
 
+.attribution-card {
+  margin-top: 1rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.attribution-copy {
+  margin: 0.8rem auto 0;
+  max-width: 44rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.attribution-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+  text-decoration: none;
+}
+
 .project-footer {
   margin-top: 1rem;
   padding: 1.25rem 1.5rem;
