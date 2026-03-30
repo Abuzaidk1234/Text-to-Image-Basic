@@ -177,6 +177,10 @@ function saveHistory(history) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
 }
 
+function getHistoryEntryById(entryId) {
+  return getHistory().find((item) => item.id === entryId);
+}
+
 function buildPrompt(basePrompt, style) {
   const styleHint = stylePrompts[style];
   return styleHint ? `${basePrompt}, ${styleHint}` : basePrompt;
@@ -333,6 +337,16 @@ function showEmptyState() {
   previewFrame.classList.remove("has-image");
 }
 
+function closeHistoryMenus() {
+  historyGrid.querySelectorAll(".history-menu[open]").forEach((menu) => {
+    menu.removeAttribute("open");
+  });
+}
+
+function getHistoryColumns() {
+  return window.matchMedia("(max-width: 1024px)").matches ? 1 : 3;
+}
+
 function renderHistory() {
   const history = getHistory();
 
@@ -347,7 +361,11 @@ function renderHistory() {
 
   historyGrid.innerHTML = "";
 
-  history.forEach((item) => {
+  const columns = getHistoryColumns();
+  const lastRowCount = history.length % columns || columns;
+  const lastRowStartIndex = history.length - lastRowCount;
+
+  history.forEach((item, index) => {
     const card = document.createElement("article");
     card.className = "history-card";
 
@@ -367,21 +385,58 @@ function renderHistory() {
     const content = document.createElement("div");
     content.className = "history-content";
 
+    const header = document.createElement("div");
+    header.className = "history-card-header";
+
     const prompt = document.createElement("p");
     prompt.className = "history-prompt";
     prompt.textContent = item.prompt;
+
+    const menu = document.createElement("details");
+    menu.className = "history-menu";
+
+    if (index >= lastRowStartIndex) {
+      menu.classList.add("history-menu-up");
+    }
+
+    const menuToggle = document.createElement("summary");
+    menuToggle.className = "history-menu-trigger";
+    menuToggle.setAttribute("aria-label", "Open actions menu");
+    menuToggle.textContent = "⋯";
+
+    const menuList = document.createElement("div");
+    menuList.className = "history-menu-list";
+
+    const reuseAction = document.createElement("button");
+    reuseAction.className = "history-menu-item";
+    reuseAction.type = "button";
+    reuseAction.dataset.historyAction = "reuse";
+    reuseAction.dataset.historyIndex = item.id;
+    reuseAction.textContent = "Reuse prompt";
+
+    const downloadAction = document.createElement("button");
+    downloadAction.className = "history-menu-item";
+    downloadAction.type = "button";
+    downloadAction.dataset.historyAction = "download";
+    downloadAction.dataset.historyIndex = item.id;
+    downloadAction.textContent = "Download image";
+
+    const deleteAction = document.createElement("button");
+    deleteAction.className = "history-menu-item history-menu-item-danger";
+    deleteAction.type = "button";
+    deleteAction.dataset.historyAction = "delete";
+    deleteAction.dataset.historyIndex = item.id;
+    deleteAction.textContent = "Delete";
+
+    menuList.append(reuseAction, downloadAction, deleteAction);
+    menu.append(menuToggle, menuList);
 
     const meta = document.createElement("p");
     meta.className = "history-meta";
     meta.textContent = `style: ${item.styleLabel} | seed: ${item.seed}`;
 
-    const action = document.createElement("button");
-    action.className = "text-button history-action";
-    action.type = "button";
-    action.dataset.historyIndex = item.id;
-    action.textContent = "Reuse prompt";
-
-    content.append(prompt, meta, action);
+    header.append(prompt, menu);
+    content.append(header, meta);
     card.append(thumb, content);
     historyGrid.append(card);
   });
@@ -402,16 +457,21 @@ function applyPromptPreset(preset) {
   promptInput.focus();
 }
 
-async function downloadCurrentImage() {
-  if (!currentImageUrl) {
+function deleteHistoryEntry(entryId) {
+  const nextHistory = getHistory().filter((item) => item.id !== entryId);
+  saveHistory(nextHistory);
+  renderHistory();
+}
+
+async function downloadImage(url, prompt, seed) {
+  if (!url) {
     return;
   }
 
   try {
-    downloadButton.disabled = true;
     setStatus("Preparing download...");
 
-    const response = await fetch(currentImageUrl);
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Download failed");
     }
@@ -420,15 +480,26 @@ async function downloadCurrentImage() {
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = blobUrl;
-    link.download = `${slugify(currentPrompt)}-${currentSeed}.png`;
+    link.download = `${slugify(prompt)}-${seed}.png`;
     document.body.append(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(blobUrl);
     setStatus("Image downloaded.");
   } catch (error) {
-    window.open(currentImageUrl, "_blank", "noopener,noreferrer");
+    window.open(url, "_blank", "noopener,noreferrer");
     setStatus("Opened the image in a new tab so you can save it manually.");
+  }
+}
+
+async function downloadCurrentImage() {
+  if (!currentImageUrl) {
+    return;
+  }
+
+  try {
+    downloadButton.disabled = true;
+    await downloadImage(currentImageUrl, currentPrompt, currentSeed);
   } finally {
     downloadButton.disabled = false;
   }
@@ -630,13 +701,40 @@ historyGrid.addEventListener("click", (event) => {
     return;
   }
 
+  if (target.closest(".history-menu-trigger")) {
+    window.setTimeout(() => {
+      const activeMenu = target.closest(".history-menu");
+
+      historyGrid.querySelectorAll(".history-menu[open]").forEach((menu) => {
+        if (menu !== activeMenu) {
+          menu.removeAttribute("open");
+        }
+      });
+    }, 0);
+    return;
+  }
+
   const entryId = target.getAttribute("data-history-index");
   if (!entryId) {
     return;
   }
 
-  const entry = getHistory().find((item) => item.id === entryId);
+  const action = target.getAttribute("data-history-action") || "reuse";
+  const entry = getHistoryEntryById(entryId);
   if (!entry) {
+    return;
+  }
+
+  closeHistoryMenus();
+
+  if (action === "delete") {
+    deleteHistoryEntry(entryId);
+    setStatus("Previous creation deleted.");
+    return;
+  }
+
+  if (action === "download") {
+    downloadImage(entry.url, entry.prompt, entry.seed);
     return;
   }
 
@@ -648,9 +746,21 @@ historyGrid.addEventListener("click", (event) => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
+document.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (target instanceof Node && historyGrid.contains(target)) {
+    return;
+  }
+
+  closeHistoryMenus();
+});
+
 if (themeToggleButton) {
   themeToggleButton.addEventListener("click", toggleTheme);
 }
+
+window.addEventListener("resize", renderHistory);
 
 loadSavedTheme();
 renderHistory();
