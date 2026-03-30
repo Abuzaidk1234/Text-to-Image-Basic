@@ -1,6 +1,73 @@
 const HORDE_BASE = "https://aihorde.net/api/v2";
 const HORDE_API_KEY = "0000000000";
 const HISTORY_KEY = "prompt-canvas-history";
+const THEME_KEY = "prompt-canvas-theme";
+const MODEL_CACHE_MS = 60000;
+
+const blockedModelWords = [
+  "nsfw",
+  "hentai",
+  "furry",
+  "yiff",
+  "pony",
+  "waifu",
+  "babes",
+  "illustrious",
+  "ntr",
+  "inpainting",
+];
+
+const preferredModelsByStyle = {
+  none: [
+    "Dreamshaper",
+    "Realistic Vision",
+    "Photon",
+    "Experience",
+    "FaeTastic",
+    "Fantasy Card Diffusion",
+    "Anything v5",
+    "stable_diffusion",
+  ],
+  cinematic: [
+    "Realistic Vision",
+    "Photon",
+    "Dreamshaper",
+    "NeverEnding Dream",
+    "AbsoluteReality",
+    "Deliberate",
+    "stable_diffusion",
+  ],
+  anime: [
+    "Anything v5",
+    "Anything Diffusion",
+    "Animagine XL",
+    "Anime Illust Diffusion XL",
+    "Eimis Anime Diffusion",
+    "Dreamshaper",
+    "stable_diffusion",
+  ],
+  pixel: [
+    "AIO Pixel Art",
+    "App Icon Diffusion",
+    "stable_diffusion",
+  ],
+  watercolor: [
+    "FaeTastic",
+    "Fantasy Card Diffusion",
+    "Dreamshaper",
+    "Experience",
+    "Perfect World",
+    "stable_diffusion",
+  ],
+  poster: [
+    "App Icon Diffusion",
+    "ModernArt Diffusion",
+    "Photon",
+    "Dreamshaper",
+    "Anything v5",
+    "stable_diffusion",
+  ],
+};
 
 const stylePrompts = {
   none: "",
@@ -56,10 +123,45 @@ const resultImage = document.querySelector("#result-image");
 const historyGrid = document.querySelector("#history-grid");
 const clearHistoryButton = document.querySelector("#clear-history-btn");
 const chips = document.querySelectorAll(".chip");
+const themeToggleButton = document.querySelector("#theme-toggle");
 
 let currentImageUrl = "";
 let currentPrompt = "";
 let currentSeed = "";
+let modelStatusCache = null;
+let modelStatusFetchedAt = 0;
+
+function applyTheme(theme) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  document.body.dataset.theme = nextTheme;
+
+  if (themeToggleButton) {
+    themeToggleButton.textContent = nextTheme === "dark" ? "Day Mode" : "Night Mode";
+    themeToggleButton.setAttribute(
+      "aria-label",
+      nextTheme === "dark" ? "Switch to day mode" : "Switch to night mode"
+    );
+  }
+}
+
+function loadSavedTheme() {
+  try {
+    applyTheme(localStorage.getItem(THEME_KEY) || "light");
+  } catch (error) {
+    applyTheme("light");
+  }
+}
+
+function toggleTheme() {
+  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(nextTheme);
+
+  try {
+    localStorage.setItem(THEME_KEY, nextTheme);
+  } catch (error) {
+    // Ignore storage write failures and still switch the theme for the current session.
+  }
+}
 
 function getHistory() {
   try {
@@ -92,7 +194,87 @@ function randomSeed() {
   return Math.floor(Math.random() * 1_000_000_000) + 1;
 }
 
-function buildImageRequest({ prompt, style, ratio, seed }) {
+function isModelAllowed(name) {
+  const lower = name.toLowerCase();
+  return !blockedModelWords.some((word) => lower.includes(word));
+}
+
+function normalizeEta(value) {
+  return typeof value === "number" && value >= 0 ? value : Number.POSITIVE_INFINITY;
+}
+
+async function getLiveModels() {
+  if (modelStatusCache && Date.now() - modelStatusFetchedAt < MODEL_CACHE_MS) {
+    return modelStatusCache;
+  }
+
+  const response = await fetch(`${HORDE_BASE}/status/models?type=image`);
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || !Array.isArray(data)) {
+    throw new Error("Could not fetch the live free-model queue.");
+  }
+
+  modelStatusCache = data;
+  modelStatusFetchedAt = Date.now();
+  return data;
+}
+
+async function chooseBestModel(style) {
+  const preferred = preferredModelsByStyle[style] || preferredModelsByStyle.none;
+  const preferredLookup = new Map(preferred.map((name, index) => [name.toLowerCase(), index]));
+  const models = await getLiveModels().catch(() => null);
+
+  if (!Array.isArray(models) || !models.length) {
+    return { name: "stable_diffusion", eta: null };
+  }
+
+  const sortBySpeedThenPreference = (a, b) => {
+    const etaDifference = normalizeEta(a.eta) - normalizeEta(b.eta);
+    if (etaDifference !== 0) {
+      return etaDifference;
+    }
+
+    const queueDifference = Number(a.queued || 0) - Number(b.queued || 0);
+    if (queueDifference !== 0) {
+      return queueDifference;
+    }
+
+    const aPreferred = preferredLookup.has(String(a.name).toLowerCase()) ? preferredLookup.get(String(a.name).toLowerCase()) : 999;
+    const bPreferred = preferredLookup.has(String(b.name).toLowerCase()) ? preferredLookup.get(String(b.name).toLowerCase()) : 999;
+    if (aPreferred !== bPreferred) {
+      return aPreferred - bPreferred;
+    }
+
+    return Number(b.count || 0) - Number(a.count || 0);
+  };
+
+  const candidates = models
+    .filter((model) => model?.type === "image")
+    .filter((model) => Number(model?.count) > 0 && Number(model?.performance) > 0)
+    .filter((model) => isModelAllowed(String(model?.name || "")));
+
+  const viableCandidates = candidates
+    .filter((model) => normalizeEta(model.eta) < 10000)
+    .sort(sortBySpeedThenPreference);
+
+  const fastPreferredCandidates = viableCandidates
+    .filter((model) => preferredLookup.has(String(model.name).toLowerCase()))
+    .filter((model) => normalizeEta(model.eta) <= 120)
+    .sort(sortBySpeedThenPreference);
+
+  const bestCandidate = fastPreferredCandidates[0] || viableCandidates[0] || candidates.sort(sortBySpeedThenPreference)[0];
+  if (!bestCandidate) {
+    return { name: "stable_diffusion", eta: null };
+  }
+
+  return {
+    name: bestCandidate.name,
+    eta: typeof bestCandidate.eta === "number" ? bestCandidate.eta : null,
+  };
+}
+
+function buildImageRequest({ prompt, style, ratio, seed, modelName }) {
   const fullPrompt = buildPrompt(prompt, style);
   const size = ratioSizes[ratio] || ratioSizes.square;
   const clientAgent = `PromptCanvas:1.0:${window.location.origin === "null" ? "local-file" : window.location.origin}`;
@@ -106,7 +288,7 @@ function buildImageRequest({ prompt, style, ratio, seed }) {
         n: 1,
         width: size.width,
         height: size.height,
-        steps: 20,
+        steps: 12,
         seed: String(seed),
       },
       nsfw: false,
@@ -114,7 +296,7 @@ function buildImageRequest({ prompt, style, ratio, seed }) {
       r2: true,
       shared: false,
       replacement_filter: true,
-      models: ["stable_diffusion"],
+      models: [modelName],
     },
     headers: {
       "Content-Type": "application/json",
@@ -277,7 +459,7 @@ async function requestGeneration(requestBody, headers) {
 
 async function waitForGeneration(id, headers) {
   const startedAt = Date.now();
-  const timeoutMs = 90000;
+  const timeoutMs = 180000;
 
   while (Date.now() - startedAt < timeoutMs) {
     const response = await fetch(`${HORDE_BASE}/generate/check/${id}`, {
@@ -362,14 +544,27 @@ async function generateImage(event) {
   const seed = seedInput.value.trim() ? Number(seedInput.value.trim()) : randomSeed();
   seedInput.value = String(seed);
 
-  const { fullPrompt, size, requestBody, headers } = buildImageRequest({ prompt, style, ratio, seed });
-  const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
-
   setLoadingState(true);
-  setStatus("Sending request to the free AI Horde queue...");
-  resultMeta.textContent = `Model: stable_diffusion | ${size.width}x${size.height} | seed ${seed}`;
+  setStatus("Checking the fastest free model right now...");
 
   try {
+    const selectedModel = await chooseBestModel(style);
+
+    if (typeof selectedModel.eta === "number" && selectedModel.eta > 180) {
+      throw new Error("The free queue is overloaded right now. Please try again in a minute.");
+    }
+
+    const { fullPrompt, size, requestBody, headers } = buildImageRequest({
+      prompt,
+      style,
+      ratio,
+      seed,
+      modelName: selectedModel.name,
+    });
+    const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
+    setStatus(`Using ${selectedModel.name}. Sending request to the free queue...`);
+    resultMeta.textContent = `Model: ${selectedModel.name} | ${size.width}x${size.height} | seed ${seed}`;
+
     const generationId = await requestGeneration(requestBody, headers);
     await waitForGeneration(generationId, headers);
     const generation = await fetchGenerationResult(generationId, headers);
@@ -453,4 +648,9 @@ historyGrid.addEventListener("click", (event) => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
+if (themeToggleButton) {
+  themeToggleButton.addEventListener("click", toggleTheme);
+}
+
+loadSavedTheme();
 renderHistory();
