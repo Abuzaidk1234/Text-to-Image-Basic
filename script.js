@@ -94,6 +94,7 @@ const resultMeta = document.querySelector("#result-meta");
 const previewFrame = document.querySelector("#preview-frame");
 const emptyState = document.querySelector("#empty-state");
 const resultImage = document.querySelector("#result-image");
+const showcaseImages = document.querySelectorAll(".showcase-image[data-gallery-base]");
 const historyGrid = document.querySelector("#history-grid");
 const clearHistoryButton = document.querySelector("#clear-history-btn");
 const promptInsertButtons = document.querySelectorAll("[data-prompt]");
@@ -324,6 +325,26 @@ function showEmptyState() {
   emptyState.hidden = false;
   previewFrame.classList.add("is-empty");
   previewFrame.classList.remove("has-image");
+}
+
+function initializeShowcaseImages() {
+  const extensions = ["webp", "png", "jpg", "jpeg", "avif"];
+
+  showcaseImages.forEach((image) => {
+    image.addEventListener("error", () => {
+      const basePath = image.dataset.galleryBase || "";
+      const currentIndex = Number(image.dataset.galleryExtIndex || "0");
+      const nextIndex = currentIndex + 1;
+
+      if (!basePath || nextIndex >= extensions.length) {
+        image.alt = "Showcase image could not be loaded";
+        return;
+      }
+
+      image.dataset.galleryExtIndex = String(nextIndex);
+      image.src = `${basePath}.${extensions[nextIndex]}`;
+    });
+  });
 }
 
 function closeHistoryMenus() {
@@ -774,4 +795,5 @@ if (themeToggleButton) {
 window.addEventListener("resize", renderHistory);
 
 loadSavedTheme();
+initializeShowcaseImages();
 renderHistory();
